@@ -1,0 +1,7 @@
+## Interface: 90200
+## Title: Switcher
+## Notes: Switch Talents/Soulbinds with Mouse Wheel
+## Version: 1.0
+
+embeds.xml
+core.lua
