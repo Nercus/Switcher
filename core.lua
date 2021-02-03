@@ -156,6 +156,7 @@ function Switcher:PLAYER_ENTERING_WORLD()
                 ["spellID"] = spellID,
                 ["index"] = k
             }
+            -- exclude selected talent in other button
             if talentID == pvptalentinfo.selectedTalentID then
                 pvptalentdata.selected = true
             end
