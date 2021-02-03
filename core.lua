@@ -22,7 +22,6 @@ end
 
 function Switcher:OnEnable()
     -- Register Events
-    -- self:RegisterEvent("PLAYER_TALENT_UPDATE")
     -- self:RegisterEvent("PLAYER_PVP_TALENT_UPDATE")
     -- self:RegisterEvent("WAR_MODE_STATUS_UPDATE")
     -- self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
@@ -35,7 +34,13 @@ end
 local function CreateNewButton(name, type, index, data)
     local Button = CreateFrame("Button", name, Switcher.SwitcherFrame)
     Button:SetSize(45, 45)
-    Button:SetPoint("LEFT", Switcher.SwitcherFrame, "RIGHT", 50*index, 0)
+    local yoffset
+    if type == "Talent" then -- offset for types
+        yoffset = 5
+    elseif type == "PvPTalent" then
+        yoffset = 55
+    end
+    Button:SetPoint("TOPRIGHT", Switcher.SwitcherFrame, "TOPLEFT", (45+5)*index, -yoffset)
     Button:EnableMouseWheel(1)
     Button.data = data
 
@@ -48,7 +53,10 @@ local function CreateNewButton(name, type, index, data)
         end
     end
 
-    local Icon = Button:CreateTexture("ARTWORK") -- TODO: Create 1px Border and SetTextCoords for 30% Zoom
+    local numchoice = #data
+    print(numchoice)
+
+    local Icon = Button:CreateTexture("ARTWORK")
     Icon:SetTexture(selectedTexture)
     Icon:SetTexCoord(0.075, 1 - 0.075, 0.075, 1 - 0.075)
     Icon:SetAllPoints()
@@ -80,16 +88,20 @@ local function CreateNewButton(name, type, index, data)
 
     local iterator = selectedindex
     Button:SetScript("OnMouseWheel", function(self, click)
-        if type == "Talent" then
+        if type == "Talent" or type == "PvPTalent" then
             iterator = iterator + click
-            if iterator == 4 then
+            if iterator == numchoice + 1 then
                 iterator = 1
             elseif iterator == 0 then
-                iterator = 3
+                iterator = numchoice
             end
             local table = self.data[iterator]
             Icon:SetTexture(table.texture)
-            LearnTalent(table.talentID)
+            if type == "Talent" then
+                LearnTalent(table.talentID)
+            elseif type == "PvPTalent" then
+                -- TODO: LearnPvpTalent function?
+            end
         end
     end)
     Button:SetScript("OnEnter", function(self)
@@ -109,6 +121,7 @@ end
 
 
 function Switcher:PLAYER_ENTERING_WORLD()
+    -- Talents
     local activeSpec = GetActiveSpecGroup()
     for i = 1, MAX_TALENT_TIERS do
         local data = {}
@@ -125,7 +138,30 @@ function Switcher:PLAYER_ENTERING_WORLD()
             }
             table.insert(data, talentdata)
         end
-        CreateNewButton("TalentButton".. i, "Talent", i, data)
+        CreateNewButton("SwitcherTalentButton".. i, "Talent", i, data)
+    end
+    -- Honor Talents
+    for k = 1, 3 do
+        local data = {}
+        local pvptalentdata
+        local pvptalentinfo = C_SpecializationInfo.GetPvpTalentSlotInfo(k)
+        for _, l in ipairs(pvptalentinfo.availableTalentIDs) do
+            local talentID, name, texture, selected, available, spellID = GetPvpTalentInfoByID(l)
+            pvptalentdata = {
+                ["talentID"] = talentID,
+                ["name"] = name,
+                ["texture"] = texture,
+                ["selected"] = selected,
+                ["available"] = available,
+                ["spellID"] = spellID,
+                ["index"] = k
+            }
+            if talentID == pvptalentinfo.selectedTalentID then
+                pvptalentdata.selected = true
+            end
+            table.insert(data, pvptalentdata)
+        end
+        CreateNewButton("SwitcherPvPTalentButton".. k, "PvPTalent", k, data)
     end
 end
 
