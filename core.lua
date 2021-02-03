@@ -22,13 +22,20 @@ end
 
 function Switcher:OnEnable()
     -- Register Events
-    -- self:RegisterEvent("PLAYER_PVP_TALENT_UPDATE")
-    -- self:RegisterEvent("WAR_MODE_STATUS_UPDATE")
-    -- self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-    -- self:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
+    -- self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED") -> TODO: Update all Talents
+    -- self:RegisterEvent("PLAYER_REGEN_DISABLED") Entering Combat -> TODO: Disable Mouse
+    -- self:RegisterEvent("PLAYER_REGEN_ENABLED") Leaving Combat -> TODO: Enable Mouse
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
-    -- self:RegisterEvent("PLAYER_LOGIN")
 end
+
+
+-- TODO: Warmode Enable/Disable Button
+-- TODO: Spec Change Button
+-- TODO: CanChangeTalents checking
+-- TODO: Rebind Talent Button to toggle Switcher
+-- TODO: Soulbind Buttons
+
+
 
 
 local function CreateNewButton(name, type, index, data)
