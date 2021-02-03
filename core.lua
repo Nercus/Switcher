@@ -31,7 +31,7 @@ end
 
 -- TODO: Warmode Enable/Disable Button
 -- TODO: Spec Change Button
--- TODO: CanChangeTalents checking
+-- TODO: CanChangeTalent(TalentID) checking. Rested, not on cooldown
 -- TODO: Rebind Talent Button to toggle Switcher
 -- TODO: Soulbind Buttons
 
