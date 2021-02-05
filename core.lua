@@ -5,6 +5,10 @@ Switcher = LibStub("AceAddon-3.0"):NewAddon("Switcher",
 local strmatch = _G.string.match
 local AceConsole = LibStub("AceConsole-3.0")
 
+-- Binding Variables
+local originalbind
+SWITCHERHEADER = "Toggle Switcher Frame"
+
 function Switcher:OnInitialize()
     local Switcher_Frame = CreateFrame("Frame", nil, UIParent)
     Switcher_Frame:SetWidth(300)
@@ -18,6 +22,16 @@ function Switcher:OnInitialize()
     tex:SetColorTexture(0, 0, 0, 0.5)
     tex:Hide()
     self.SwitcherFrame.bg = tex
+
+    self:RegisterEvent("PLAYER_LOGIN")
+end
+
+function Switcher:ToggleSwitcherFrame()
+    if self.SwitcherFrame:IsShown() then
+        self.SwitcherFrame:Hide()
+    else
+        self.SwitcherFrame:Show()
+    end
 end
 
 function Switcher:OnEnable()
@@ -29,12 +43,24 @@ function Switcher:OnEnable()
 end
 
 
+function Switcher:PLAYER_LOGIN()
+    originalbind = GetBindingKey("TOGGLETALENTS")
+    SetBinding("N")
+    SetBinding(originalbind, "SWITCHER_TOGGLE_FRAME")
+end
+
+
+function Switcher:OnDisable()
+    SetBinding(originalbind, "TOGGLETALENTS")
+end
+
+
+
+
 -- TODO: Warmode Enable/Disable Button
 -- TODO: Spec Change Button
--- TODO: CanChangeTalent(TalentID) checking. Rested, not on cooldown
--- TODO: Rebind Talent Button to toggle Switcher
+-- TODO: CanChangeTalent(TalentID) opt. arg. TalentID checking. Rested, not on cooldown
 -- TODO: Soulbind Buttons
-
 
 
 
@@ -44,8 +70,10 @@ local function CreateNewButton(name, type, index, data)
     local yoffset
     if type == "Talent" then -- offset for types
         yoffset = 5
-    elseif type == "PvPTalent" then
+    elseif type == "Soulbind" then
         yoffset = 55
+    elseif type == "PvPTalent" then
+        yoffset = 105
     end
     Button:SetPoint("TOPRIGHT", Switcher.SwitcherFrame, "TOPLEFT", (45+5)*index, -yoffset)
     Button:EnableMouseWheel(1)
@@ -59,42 +87,50 @@ local function CreateNewButton(name, type, index, data)
             selectedindex = j.index
         end
     end
-
     local numchoice = #data
-    print(numchoice)
-
     local Icon = Button:CreateTexture("ARTWORK")
     Icon:SetTexture(selectedTexture)
     Icon:SetTexCoord(0.075, 1 - 0.075, 0.075, 1 - 0.075)
     Icon:SetAllPoints()
     Button:SetNormalTexture(Icon)
 
+
     Button.bottom = Button:CreateTexture()
     Button.bottom:SetColorTexture(0, 0, 0, 1)
     Button.bottom:SetPoint("TOPLEFT", Icon, "BOTTOMLEFT", -1, 0)
     Button.bottom:SetPoint("TOPRIGHT", Icon, "BOTTOMRIGHT", 1, 0)
     Button.bottom:SetHeight(1)
+    Button.bottom:SetDrawLayer("BACKGROUND")
 
     Button.top = Button:CreateTexture()
     Button.top:SetColorTexture(0, 0, 0, 1)
     Button.top:SetPoint("BOTTOMLEFT", Icon, "TOPLEFT", -1, 0)
     Button.top:SetPoint("BOTTOMRIGHT", Icon, "TOPRIGHT", 1, 0)
     Button.top:SetHeight(1)
+    Button.top:SetDrawLayer("BACKGROUND")
 
     Button.left = Button:CreateTexture()
     Button.left:SetColorTexture(0, 0, 0, 1)
     Button.left:SetPoint("TOPLEFT", Icon, "BOTTOMLEFT", -1, 0)
     Button.left:SetPoint("BOTTOMRIGHT", Icon, "TOPRIGHT", 1, 0)
     Button.left:SetWidth(1)
+    Button.left:SetDrawLayer("BACKGROUND")
 
     Button.right = Button:CreateTexture()
     Button.right:SetColorTexture(0, 0, 0, 1)
     Button.right:SetPoint("TOPLEFT", Icon, "BOTTOMLEFT", -1, 0)
     Button.right:SetPoint("BOTTOMRIGHT", Icon, "TOPRIGHT", 1, 0)
     Button.right:SetWidth(1)
+    Button.right:SetDrawLayer("BACKGROUND")
 
-    local iterator = selectedindex
+    local iterator
+    if selectedindex then
+        iterator = selectedindex
+    else
+        iterator = 1
+    end
     Button:SetScript("OnMouseWheel", function(self, click)
+        -- TODO: Throttle Change talent
         if type == "Talent" or type == "PvPTalent" then
             iterator = iterator + click
             if iterator == numchoice + 1 then
@@ -107,7 +143,7 @@ local function CreateNewButton(name, type, index, data)
             if type == "Talent" then
                 LearnTalent(table.talentID)
             elseif type == "PvPTalent" then
-                -- TODO: LearnPvpTalent function?
+                LearnPvpTalent(table.talentID, index);
             end
         end
     end)
@@ -128,6 +164,7 @@ end
 
 
 function Switcher:PLAYER_ENTERING_WORLD()
+
     -- Talents
     local activeSpec = GetActiveSpecGroup()
     for i = 1, MAX_TALENT_TIERS do
@@ -171,6 +208,7 @@ function Switcher:PLAYER_ENTERING_WORLD()
         end
         CreateNewButton("SwitcherPvPTalentButton".. k, "PvPTalent", k, data)
     end
+    -- Soulbind
 end
 
 

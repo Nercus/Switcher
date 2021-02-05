@@ -1,0 +1,5 @@
+<Bindings>
+	<Binding name="SWITCHER_TOGGLE_FRAME" header="SWITCHERHEADER" category="ADDONS">
+		Switcher:ToggleSwitcherFrame()
+	</Binding>
+</Bindings>
