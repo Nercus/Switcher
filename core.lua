@@ -59,9 +59,35 @@ end
 
 -- TODO: Warmode Enable/Disable Button
 -- TODO: Spec Change Button
--- TODO: CanChangeTalent(TalentID) opt. arg. TalentID checking. Rested, not on cooldown
 -- TODO: Soulbind Buttons
+-- TODO: Change Based on Player Level
 
+
+function Switcher:CanChangeTalents(spellid) -- TODO: Returns true if many inputs. Even if spell is on cd
+    if (InCombatLockdown()) then return false end
+    if spellid then
+        local currentCharges, _, _, cooldownDuration, _ = GetSpellCharges(spellid);
+        if currentCharges then
+            if currentCharges == 0 and cooldownDuration > 0 then
+                return false
+            end
+        else
+            local start, duration, enabled = GetSpellCooldown(spellid)
+            if duration > 0 then
+                return false
+            end
+        end
+    end
+
+    if (IsResting()) then return true end
+    local buffs = {32727, 44521, 228128}; -- TODO: Collect all resting buffs
+    for _, id in ipairs(buffs) do
+        local name = GetSpellInfo(id)
+        if AuraUtil.FindAuraByName(name, "player") then
+            return true
+        end
+    end
+end
 
 
 local function CreateNewButton(name, type, index, data)
@@ -139,11 +165,16 @@ local function CreateNewButton(name, type, index, data)
                 iterator = numchoice
             end
             local table = self.data[iterator]
-            Icon:SetTexture(table.texture)
-            if type == "Talent" then
-                LearnTalent(table.talentID)
-            elseif type == "PvPTalent" then
-                LearnPvpTalent(table.talentID, index);
+            print(Switcher:CanChangeTalents(table.spellID))
+            if Switcher:CanChangeTalents(table.spellID) then
+                Icon:SetTexture(table.texture)
+                if type == "Talent" then
+                    LearnTalent(table.talentID)
+                elseif type == "PvPTalent" then
+                    LearnPvpTalent(table.talentID, index);
+                end
+            else
+                iterator = iterator - click
             end
         end
     end)
