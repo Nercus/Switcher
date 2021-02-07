@@ -36,7 +36,7 @@ end
 
 function Switcher:OnEnable()
     -- Register Events
-    -- self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED") -> TODO: Update all Talents
+    -- self:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED") -> TODO: Update all Talent data
     -- self:RegisterEvent("PLAYER_REGEN_DISABLED") Entering Combat -> TODO: Disable Mouse
     -- self:RegisterEvent("PLAYER_REGEN_ENABLED") Leaving Combat -> TODO: Enable Mouse
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -63,24 +63,44 @@ end
 -- TODO: Change Based on Player Level
 
 
-function Switcher:CanChangeTalents(spellid) -- TODO: Returns true if many inputs. Even if spell is on cd
+function Switcher:CanChangeTalents(data)
     if (InCombatLockdown()) then return false end
-    if spellid then
-        local currentCharges, _, _, cooldownDuration, _ = GetSpellCharges(spellid);
-        if currentCharges then
-            if currentCharges == 0 and cooldownDuration > 0 then
-                return false
+
+    if data then
+        local spellid
+        for _,j in ipairs(data) do
+            if j.selected then
+                spellid = j.spellID
             end
-        else
-            local start, duration, enabled = GetSpellCooldown(spellid)
-            if duration > 0 then
-                return false
+        end
+        if spellid then
+            local currentCharges, _, _, cooldownDuration, _ = GetSpellCharges(spellid);
+            if currentCharges then
+                if currentCharges == 0 and cooldownDuration > 0 then
+                    return false
+                end
+            else
+                local start, duration, enabled = GetSpellCooldown(spellid)
+                if duration > 0 then
+                    return false
+                end
             end
         end
     end
 
     if (IsResting()) then return true end
-    local buffs = {32727, 44521, 228128}; -- TODO: Collect all resting buffs
+    local buffs = {
+        32727, -- Arena Preparation
+        44521, -- Preperation
+        228128, -- Dungeon Preperation
+        227041, -- Tome of the Tranquil Mind
+        226234, -- Codex of the Tranquil Mind
+        256231, -- Tome of the Quiet Mind
+        256230, -- Codex of the Quiet Mind
+        321923, -- Tome of the Still Mind
+        324028, -- Codex of the Still Mind
+        325012, -- Time to Reflect (Kyrian)
+    }
     for _, id in ipairs(buffs) do
         local name = GetSpellInfo(id)
         if AuraUtil.FindAuraByName(name, "player") then
@@ -155,26 +175,37 @@ local function CreateNewButton(name, type, index, data)
     else
         iterator = 1
     end
+    local last
+    local previter
     Button:SetScript("OnMouseWheel", function(self, click)
         -- TODO: Throttle Change talent
-        if type == "Talent" or type == "PvPTalent" then
-            iterator = iterator + click
-            if iterator == numchoice + 1 then
-                iterator = 1
-            elseif iterator == 0 then
-                iterator = numchoice
-            end
-            local table = self.data[iterator]
-            print(Switcher:CanChangeTalents(table.spellID))
-            if Switcher:CanChangeTalents(table.spellID) then
-                Icon:SetTexture(table.texture)
-                if type == "Talent" then
-                    LearnTalent(table.talentID)
-                elseif type == "PvPTalent" then
-                    LearnPvpTalent(table.talentID, index);
+        if not last or last < GetTime() - 0.1 then
+            last = GetTime()
+            if (type == "Talent" or type == "PvPTalent") then
+                local last
+                iterator = iterator + click
+                if iterator == numchoice + 1 then
+                    iterator = 1
+                elseif iterator == 0 then
+                    iterator = numchoice
                 end
-            else
-                iterator = iterator - click
+                local info = self.data[iterator]
+                if info then
+                    if Switcher:CanChangeTalents(self.data) then
+                        Icon:SetTexture(info.texture)
+                        info.selected = true
+                        if previter then
+                            self.data[previter].selected = false
+                        end
+                        if type == "Talent" then
+                            LearnTalent(info.talentID)
+                        elseif type == "PvPTalent" then
+                            LearnPvpTalent(info.talentID, index);
+                        end
+                    else
+                    end
+                end
+                previter = iterator
             end
         end
     end)
