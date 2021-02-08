@@ -57,6 +57,8 @@ end
 
 
 
+
+
 -- TODO: Warmode Enable/Disable Button
 -- TODO: Spec Change Button
 -- TODO: Soulbind Buttons
@@ -109,6 +111,61 @@ function Switcher:CanChangeTalents(data)
     end
 end
 
+local function CreateModuleButton(name, type, data)
+    local Button = CreateFrame("Button", name, Switcher.SwitcherFrame)
+    Button:SetSize(45, 45)
+    Button:SetPoint("TOPRIGHT", Switcher.SwitcherFrame, "TOPLEFT", -5, -5)
+
+    local id, name, description, icon, background, role = GetSpecializationInfo(GetSpecialization())
+    local Icon = Button:CreateTexture("ARTWORK")
+    Icon:SetTexture(icon)
+    Icon:SetTexCoord(0.075, 1 - 0.075, 0.075, 1 - 0.075)
+    Icon:SetAllPoints()
+    Button:SetNormalTexture(Icon)
+
+
+    Button.bottom = Button:CreateTexture()
+    Button.bottom:SetColorTexture(0, 0, 0, 1)
+    Button.bottom:SetPoint("TOPLEFT", Icon, "BOTTOMLEFT", -1, 0)
+    Button.bottom:SetPoint("TOPRIGHT", Icon, "BOTTOMRIGHT", 1, 0)
+    Button.bottom:SetHeight(1)
+    Button.bottom:SetDrawLayer("BACKGROUND")
+
+    Button.top = Button:CreateTexture()
+    Button.top:SetColorTexture(0, 0, 0, 1)
+    Button.top:SetPoint("BOTTOMLEFT", Icon, "TOPLEFT", -1, 0)
+    Button.top:SetPoint("BOTTOMRIGHT", Icon, "TOPRIGHT", 1, 0)
+    Button.top:SetHeight(1)
+    Button.top:SetDrawLayer("BACKGROUND")
+
+    Button.left = Button:CreateTexture()
+    Button.left:SetColorTexture(0, 0, 0, 1)
+    Button.left:SetPoint("TOPLEFT", Icon, "BOTTOMLEFT", -1, 0)
+    Button.left:SetPoint("BOTTOMRIGHT", Icon, "TOPRIGHT", 1, 0)
+    Button.left:SetWidth(1)
+    Button.left:SetDrawLayer("BACKGROUND")
+
+    Button.right = Button:CreateTexture()
+    Button.right:SetColorTexture(0, 0, 0, 1)
+    Button.right:SetPoint("TOPLEFT", Icon, "BOTTOMLEFT", -1, 0)
+    Button.right:SetPoint("BOTTOMRIGHT", Icon, "TOPRIGHT", 1, 0)
+    Button.right:SetWidth(1)
+    Button.right:SetDrawLayer("BACKGROUND")
+
+    local anim = Button:CreateAnimationGroup()
+    anim:SetLooping("NONE")
+    anim.translation = anim:CreateAnimation("Rotation")
+    anim.translation:SetDegrees(360)
+    anim.translation:SetDuration(3)
+    anim.translation:SetSmoothing("OUT")
+
+    Button:SetScript("OnEnter", function()
+        anim:Play()
+    end)
+
+
+
+end
 
 local function CreateNewButton(name, type, index, data)
     local Button = CreateFrame("Button", name, Switcher.SwitcherFrame)
@@ -178,7 +235,6 @@ local function CreateNewButton(name, type, index, data)
     local last
     local previter
     Button:SetScript("OnMouseWheel", function(self, click)
-        -- TODO: Throttle Change talent
         if not last or last < GetTime() - 0.1 then
             last = GetTime()
             if (type == "Talent" or type == "PvPTalent") then
@@ -188,6 +244,28 @@ local function CreateNewButton(name, type, index, data)
                     iterator = 1
                 elseif iterator == 0 then
                     iterator = numchoice
+                end
+
+                if type == "PvPTalent" then
+                    local selectedpvptalents = {}
+                    for i = 1, 3 do
+                        local slotinfo = C_SpecializationInfo.GetPvpTalentSlotInfo(i)
+                        if (slotinfo.selectedTalentID) then
+                            selectedpvptalents[slotinfo.selectedTalentID] = true
+                        end
+                    end
+                    for i, j in ipairs(data) do
+                        if selectedpvptalents[j.talentID] then
+                            iterator = iterator + click
+                            if iterator == numchoice + 1 then
+                                iterator = 1
+                            elseif iterator == 0 then
+                                iterator = numchoice
+                            end
+                        else
+                            break
+                        end
+                    end
                 end
                 local info = self.data[iterator]
                 if info then
@@ -227,6 +305,7 @@ end
 
 function Switcher:PLAYER_ENTERING_WORLD()
 
+    --CreateModuleButton("Spec", "Spec")
     -- Talents
     local activeSpec = GetActiveSpecGroup()
     for i = 1, MAX_TALENT_TIERS do
