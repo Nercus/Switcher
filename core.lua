@@ -60,7 +60,7 @@ end
 
 
 -- TODO: Warmode Enable/Disable Button
--- TODO: Spec Change Button
+-- TODO: Spec Change Button: Cancel Spec Change cast if OnMouseWheel
 -- TODO: Soulbind Buttons
 -- TODO: Change Based on Player Level
 
@@ -245,7 +245,6 @@ local function CreateNewButton(name, type, index, data)
                 elseif iterator == 0 then
                     iterator = numchoice
                 end
-
                 if type == "PvPTalent" then
                     local selectedpvptalents = {}
                     for i = 1, 3 do
@@ -254,19 +253,16 @@ local function CreateNewButton(name, type, index, data)
                             selectedpvptalents[slotinfo.selectedTalentID] = true
                         end
                     end
-                    for i, j in ipairs(data) do
-                        if selectedpvptalents[j.talentID] then
-                            iterator = iterator + click
-                            if iterator == numchoice + 1 then
-                                iterator = 1
-                            elseif iterator == 0 then
-                                iterator = numchoice
-                            end
-                        else
-                            break
+                    while selectedpvptalents[self.data[iterator].talentID] do
+                        iterator = iterator + click
+                        if iterator == numchoice + 1 then
+                            iterator = 1
+                        elseif iterator == 0 then
+                            iterator = numchoice
                         end
                     end
                 end
+
                 local info = self.data[iterator]
                 if info then
                     if Switcher:CanChangeTalents(self.data) then
@@ -341,7 +337,7 @@ function Switcher:PLAYER_ENTERING_WORLD()
                 ["spellID"] = spellID,
                 ["index"] = k
             }
-            -- TODO: exclude selected talent in other button
+
             if talentID == pvptalentinfo.selectedTalentID then
                 pvptalentdata.selected = true
             end
