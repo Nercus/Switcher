@@ -113,7 +113,7 @@ end
 
 local function CreateModuleButton(name, type, data)
     local Button = CreateFrame("Button", name, Switcher.SwitcherFrame)
-    Button:SetSize(45, 45)
+    Button:SetSize(30, 45)
     Button:SetPoint("TOPRIGHT", Switcher.SwitcherFrame, "TOPLEFT", -5, -5)
 
     local id, name, description, icon, background, role = GetSpecializationInfo(GetSpecialization())
@@ -152,16 +152,16 @@ local function CreateModuleButton(name, type, data)
     Button.right:SetWidth(1)
     Button.right:SetDrawLayer("BACKGROUND")
 
-    local anim = Button:CreateAnimationGroup()
-    anim:SetLooping("NONE")
-    anim.translation = anim:CreateAnimation("Rotation")
-    anim.translation:SetDegrees(360)
-    anim.translation:SetDuration(3)
-    anim.translation:SetSmoothing("OUT")
+    -- local anim = Button:CreateAnimationGroup()
+    -- anim:SetLooping("NONE")
+    -- anim.translation = anim:CreateAnimation("Rotation")
+    -- anim.translation:SetDegrees(360)
+    -- anim.translation:SetDuration(3)
+    -- anim.translation:SetSmoothing("OUT")
 
-    Button:SetScript("OnEnter", function()
-        anim:Play()
-    end)
+    -- Button:SetScript("OnEnter", function()
+    --     anim:Play()
+    -- end)
 
 
 
@@ -301,7 +301,7 @@ end
 
 function Switcher:PLAYER_ENTERING_WORLD()
 
-    --CreateModuleButton("Spec", "Spec")
+    CreateModuleButton("Spec", "Spec")
     -- Talents
     local activeSpec = GetActiveSpecGroup()
     for i = 1, MAX_TALENT_TIERS do
