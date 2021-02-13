@@ -57,12 +57,11 @@ end
 
 
 
-
-
 -- TODO: Warmode Enable/Disable Button
--- TODO: Spec Change Button: Cancel Spec Change cast if OnMouseWheel
+-- TODO: Spec Change Button: Immediatly start spec change. Interrupt if next spec is chosen.
 -- TODO: Soulbind Buttons
 -- TODO: Change Based on Player Level
+-- TODO: Use Book if not in combat and not rested on scroll. Black overlay Texture with Text "Scroll to use book"
 
 
 function Switcher:CanChangeTalents(data)
@@ -113,10 +112,35 @@ end
 
 local function CreateModuleButton(name, type, data)
     local Button = CreateFrame("Button", name, Switcher.SwitcherFrame)
-    Button:SetSize(30, 45)
-    Button:SetPoint("TOPRIGHT", Switcher.SwitcherFrame, "TOPLEFT", -5, -5)
+    Button:SetSize(50, 50)
 
-    local id, name, description, icon, background, role = GetSpecializationInfo(GetSpecialization())
+    local icon
+    local yoffset
+    if type == "Spec" then
+        icon = select(4, GetSpecializationInfo(GetSpecialization()))
+        yoffset = 2.5
+    elseif type == "Warmode" then
+        icon = 1455894 -- Use Atlas here: "pvptalents-warmode-swords-disabled"; "pvptalents-warmode-swords"
+        yoffset = 102.5
+    elseif type == "Soulbind" then
+            -- Atlas for Covenants:
+            -- "covenantchoice-offering-portrait-kyrian-kleia"
+            -- "covenantchoice-offering-portrait-kyrian-mikanikos"
+            -- "covenantchoice-offering-portrait-kyrian-pelagos"
+            -- "covenantchoice-offering-portrait-necrolord-emeni"
+            -- "covenantchoice-offering-portrait-necrolord-heirmir"
+            -- "covenantchoice-offering-portrait-necrolord-marileth"
+            -- "covenantchoice-offering-portrait-nightfae-korayn"
+            -- "covenantchoice-offering-portrait-nightfae-niya"
+            -- "covenantchoice-offering-portrait-nightfae-dreamweaver"
+            -- "covenantchoice-offering-portrait-venthyr-draven"
+            -- "covenantchoice-offering-portrait-venthyr-nadjia"
+            -- "covenantchoice-offering-portrait-venthyr-theotar"
+
+    end
+
+    Button:SetPoint("TOPRIGHT", Switcher.SwitcherFrame, "TOPLEFT", -2.5, -yoffset)
+
     local Icon = Button:CreateTexture("ARTWORK")
     Icon:SetTexture(icon)
     Icon:SetTexCoord(0.075, 1 - 0.075, 0.075, 1 - 0.075)
@@ -151,6 +175,22 @@ local function CreateModuleButton(name, type, data)
     Button.right:SetPoint("BOTTOMRIGHT", Icon, "TOPRIGHT", 1, 0)
     Button.right:SetWidth(1)
     Button.right:SetDrawLayer("BACKGROUND")
+
+    local FlyoutIndicator = Button:CreateTexture("ARTWORK")
+    FlyoutIndicator:SetAtlas("common-icon-forwardarrow")
+    FlyoutIndicator:SetPoint("CENTER", Button, "RIGHT", 0, 0)
+    FlyoutIndicator:SetSize(13, 13)
+    FlyoutIndicator:Hide()
+    Button.flyoutindicator = FlyoutIndicator
+
+
+    Button:SetScript("OnEnter", function(self)
+        self.flyoutindicator:Show()
+    end)
+
+    Button:SetScript("OnLeave", function(self)
+        self.flyoutindicator:Hide()
+    end)
 
     -- local anim = Button:CreateAnimationGroup()
     -- anim:SetLooping("NONE")
@@ -302,6 +342,7 @@ end
 function Switcher:PLAYER_ENTERING_WORLD()
 
     CreateModuleButton("Spec", "Spec")
+    CreateModuleButton("Warmode", "Warmode")
     -- Talents
     local activeSpec = GetActiveSpecGroup()
     for i = 1, MAX_TALENT_TIERS do
@@ -346,6 +387,9 @@ function Switcher:PLAYER_ENTERING_WORLD()
         CreateNewButton("SwitcherPvPTalentButton".. k, "PvPTalent", k, data)
     end
     -- Soulbind
+
+
+    Switcher:ToggleSwitcherFrame()
 end
 
 
