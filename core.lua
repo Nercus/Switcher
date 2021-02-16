@@ -9,6 +9,22 @@ local AceConsole = LibStub("AceConsole-3.0")
 local originalbind
 SWITCHERHEADER = "Toggle Switcher Frame"
 
+-- Covenant Atlas data
+local covenantatlas = {
+    [1] = "covenantchoice-offering-portrait-nightfae-niya",
+    [2] = "covenantchoice-offering-portrait-nightfae-dreamweaver",
+    [3] = "covenantchoice-offering-portrait-venthyr-draven",
+    [4] = "covenantchoice-offering-portrait-necrolord-marileth",
+    [5] = "covenantchoice-offering-portrait-necrolord-emeni",
+    [6] = "covenantchoice-offering-portrait-nightfae-korayn",
+    [7] = "covenantchoice-offering-portrait-kyrian-pelagos",
+    [8] = "covenantchoice-offering-portrait-venthyr-nadjia",
+    [9] = "covenantchoice-offering-portrait-venthyr-theotar",
+    [10] = "covenantchoice-offering-portrait-necrolord-heirmir",
+    [13] = "covenantchoice-offering-portrait-kyrian-kleia",
+    [18] = "covenantchoice-offering-portrait-kyrian-mikanikos",
+}
+
 function Switcher:OnInitialize()
     local Switcher_Frame = CreateFrame("Frame", nil, UIParent)
     Switcher_Frame:SetWidth(300)
@@ -111,40 +127,41 @@ function Switcher:CanChangeTalents(data)
 end
 
 local function CreateModuleButton(name, type, data)
-    local Button = CreateFrame("Button", name, Switcher.SwitcherFrame)
+    local Button = CreateFrame("Button", name, Switcher.SwitcherFrame, "SecureActionButtonTemplate")
     Button:SetSize(50, 50)
 
-    local icon
+    local Icon = Button:CreateTexture("ARTWORK")
+
     local yoffset
     if type == "Spec" then
-        icon = select(4, GetSpecializationInfo(GetSpecialization()))
+        Icon:SetTexture(select(4, GetSpecializationInfo(GetSpecialization())))
+        Icon:SetTexCoord(0.075, 1 - 0.075, 0.075, 1 - 0.075)
+        Icon:SetAllPoints()
         yoffset = 2.5
     elseif type == "Warmode" then
-        icon = 1455894 -- Use Atlas here: "pvptalents-warmode-swords-disabled"; "pvptalents-warmode-swords"
-        yoffset = 102.5
+        if C_PvP.IsWarModeDesired() then
+            Icon:SetAtlas("pvptalents-warmode-swords")
+        else
+            Icon:SetAtlas("pvptalents-warmode-swords-disabled")
+        end
+        Icon:SetTexCoord(0.1, 1 - 0.1, 0.1, 1 - 0.1)
+        Icon:SetAllPoints()
+        yoffset = 112.5
     elseif type == "Soulbind" then
-            -- Atlas for Covenants:
-            -- "covenantchoice-offering-portrait-kyrian-kleia"
-            -- "covenantchoice-offering-portrait-kyrian-mikanikos"
-            -- "covenantchoice-offering-portrait-kyrian-pelagos"
-            -- "covenantchoice-offering-portrait-necrolord-emeni"
-            -- "covenantchoice-offering-portrait-necrolord-heirmir"
-            -- "covenantchoice-offering-portrait-necrolord-marileth"
-            -- "covenantchoice-offering-portrait-nightfae-korayn"
-            -- "covenantchoice-offering-portrait-nightfae-niya"
-            -- "covenantchoice-offering-portrait-nightfae-dreamweaver"
-            -- "covenantchoice-offering-portrait-venthyr-draven"
-            -- "covenantchoice-offering-portrait-venthyr-nadjia"
-            -- "covenantchoice-offering-portrait-venthyr-theotar"
+        local activesb = C_Soulbinds.GetActiveSoulbindID()
+        if activesb then
+            Icon:SetAtlas(covenantatlas[activesb])
+        end
+        Icon:SetTexCoord(0.15, 1 - 0.15, 0.15, 1 - 0.15)
+        Icon:SetAllPoints()
+        yoffset = 57.5
 
     end
 
     Button:SetPoint("TOPRIGHT", Switcher.SwitcherFrame, "TOPLEFT", -2.5, -yoffset)
 
-    local Icon = Button:CreateTexture("ARTWORK")
-    Icon:SetTexture(icon)
-    Icon:SetTexCoord(0.075, 1 - 0.075, 0.075, 1 - 0.075)
-    Icon:SetAllPoints()
+
+
     Button:SetNormalTexture(Icon)
 
 
@@ -192,6 +209,39 @@ local function CreateModuleButton(name, type, data)
         self.flyoutindicator:Hide()
     end)
 
+    local last
+    local iterator
+    if selectedindex then
+        iterator = selectedindex
+    else
+        iterator = 1
+    end
+    Button:SetScript("OnMouseWheel", function(self, click)
+        if not last or last < GetTime() - 0.1 then
+            last = GetTime()
+            if type == "Spec" then
+                iterator = iterator + click
+                if iterator == GetNumSpecializations() + 1 then
+                    iterator = 1
+                elseif iterator == 0 then
+                    iterator = GetNumSpecializations()
+                end
+                -- TODO: Stop cast of specchange
+                SetSpecialization(iterator)
+                Icon:SetTexture(select(4, GetSpecializationInfo(iterator)))
+            elseif type == "Warmode" then
+                if C_PvP.CanToggleWarModeInArea() then
+                    C_PvP.ToggleWarMode()
+                    if C_PvP.IsWarModeDesired() then -- previous warmode state
+                        Icon:SetAtlas("pvptalents-warmode-swords-disabled")
+                    else
+                        Icon:SetAtlas("pvptalents-warmode-swords")
+                    end
+                end
+            end
+        end
+    end)
+
     -- local anim = Button:CreateAnimationGroup()
     -- anim:SetLooping("NONE")
     -- anim.translation = anim:CreateAnimation("Rotation")
@@ -214,9 +264,9 @@ local function CreateNewButton(name, type, index, data)
     if type == "Talent" then -- offset for types
         yoffset = 5
     elseif type == "Soulbind" then
-        yoffset = 55
+        yoffset = 60
     elseif type == "PvPTalent" then
-        yoffset = 105
+        yoffset = 115
     end
     Button:SetPoint("TOPRIGHT", Switcher.SwitcherFrame, "TOPLEFT", (45+5)*index, -yoffset)
     Button:EnableMouseWheel(1)
@@ -343,6 +393,8 @@ function Switcher:PLAYER_ENTERING_WORLD()
 
     CreateModuleButton("Spec", "Spec")
     CreateModuleButton("Warmode", "Warmode")
+    CreateModuleButton("Soulbind", "Soulbind")
+
     -- Talents
     local activeSpec = GetActiveSpecGroup()
     for i = 1, MAX_TALENT_TIERS do
